@@ -17,12 +17,19 @@ async function func() {
         assert.equal(text, `${remaining} of ${total} remaining`);
         await driver.sleep(2000);
         for (let i = 1; i <= total; i++) {
-            await driver.findElement(
+            let doneFalseElement = await driver.findElement(
                 By.xpath(`//li[${i}]//span[@class='done-false']`)
             );
+            assert(doneFalseElement);
+
             await driver.findElement(By.name(`li${i}`)).click();
             remaining--;
             await driver.sleep(1000);
+
+            let doneTrueElement = await driver.findElement(
+                By.xpath(`//li[${i}]//span[@class='done-true']`)
+            );
+            assert(doneTrueElement);
         }
         await driver.findElement(By.id("sampletodotext")).sendKeys("Привет, мир! Сегодня у меня большие планы:)");
         await driver.findElement(By.id("addbutton")).click();
@@ -31,6 +38,12 @@ async function func() {
         await driver.sleep(2000);
         await driver.findElement(By.name(`li6`)).click();
         remaining--;
+
+        let newItemDoneTrue = await driver.findElement(
+            By.xpath(`//li[6]//span[@class='done-true']`)
+        );
+        assert(newItemDoneTrue);
+
         let text1 = await driver
             .findElement(
                 By.xpath(`//span[text()='${remaining} of ${total} remaining']`)
@@ -46,13 +59,11 @@ async function func() {
             .getText();
         assert.equal(text2, `${remaining} of ${total} remaining`);
         await driver.sleep(2000);
-    }
-    catch (err) {
+    } catch (err) {
         driver.takeScreenshot().then(function (image) {
-            require('fs').writeFileSync('screenshot_err.png', image, 'base64')
+            require('fs').writeFileSync('screenshot_err.png', image, 'base64');
         });
-    }
-    finally {
+    } finally {
         await driver.quit();
     }
 }

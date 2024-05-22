@@ -20,7 +20,14 @@ class TodoApplication {
     }
 
     async markTodoCompleted(index) {
+        const todoItem = await this.driver.findElement(By.xpath(`//li[${index}]//span`));
+        const classNameBefore = await todoItem.getAttribute('class');
+        expect(classNameBefore).to.include('done-false');
+
         await this.driver.findElement(By.name(`li${index}`)).click();
+
+        const classNameAfter = await todoItem.getAttribute('class');
+        expect(classNameAfter).to.include('done-true');
     }
 
     async addNewTodoItem(description) {

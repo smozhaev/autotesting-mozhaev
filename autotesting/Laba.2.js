@@ -1,5 +1,5 @@
 const { assert, expect } = require('chai');
-const { Builder, Browser, By, until } = require('selenium-webdriver');
+const { Builder, Browser, By } = require('selenium-webdriver');
 const fs = require('fs');
 const { promisify } = require('util');
 const writeFileAsync = promisify(fs.writeFile);
@@ -9,33 +9,25 @@ class BasePage {
         this.driver = driver;
     }
     async open() {
-        console.log("Opening main page...");
         await this.driver.get('https://mospolytech.ru/');
     }
     async clickSchedule() {
-        console.log("Clicking on Schedule link...");
-        await this.driver.wait(until.elementLocated(By.xpath("//a[@href='/obuchauschimsya/raspisaniya/']")), 10000);
         await this.driver.findElement(By.xpath("//a[@href='/obuchauschimsya/raspisaniya/']")).click();
     }
     async clickSeeOnWebsite() {
-        console.log("Clicking on See On Website link...");
-        await this.driver.wait(until.elementLocated(By.xpath("//a[@href='https://rasp.dmami.ru/']")), 10000);
         await this.driver.findElement(By.xpath("//a[@href='https://rasp.dmami.ru/']")).click();
     }
-    async checkTabs(){
-        console.log("Checking browser tabs...");
+    async checkTabs() {
         const initialWindowHandle = await this.driver.getWindowHandle();
         const newWindowHandle = await this.driver.wait(async () => {
             const handlesAfterAction = await this.driver.getAllWindowHandles();
             return handlesAfterAction.find(handle => handle !== initialWindowHandle);
-        }, 10000);
+        }, 3000);
         if (newWindowHandle) {
             await this.driver.switchTo().window(newWindowHandle);
         }
     }
-    async getTitle(){
-        console.log("Getting title of the page...");
-        await this.driver.wait(until.elementLocated(By.xpath('//h1')), 10000);
+    async getTitle() {
         return await this.driver.findElement(By.xpath('//h1')).getText();
     }
 }
@@ -45,11 +37,10 @@ class SchedulePage {
         this.driver = driver;
     }
     async checkGroups() {
-        console.log("Checking groups...");
         const groupNumber = '221-323';
-        const searchField = await this.driver.wait(until.elementLocated(By.className('groups')), 10000);
+        const searchField = await this.driver.findElement(By.className('groups'));
         await searchField.sendKeys(groupNumber);
-        const resultElements = await this.driver.wait(until.elementsLocated(By.className('group')), 10000);
+        const resultElements = await this.driver.findElements(By.className('group'));
         const groupTexts = await Promise.all(resultElements.map(async (element) => {
             return await element.getText();
         }));
@@ -58,18 +49,14 @@ class SchedulePage {
         }
         await this.driver.sleep(1000);
     }
-    async clickGroup(){
-        console.log("Clicking on the group...");
+    async clickGroup() {
         const groupNumber = '221-323';
-        await this.driver.wait(until.elementLocated(By.id(groupNumber)), 10000);
         await this.driver.findElement(By.id(groupNumber)).click();
         await this.driver.sleep(1000);
     }
     async checkColor() {
-        console.log("Checking today's schedule color...");
-        await this.driver.wait(until.elementLocated(By.className('goToToday')), 10000);
         await this.driver.findElement(By.className('goToToday')).click();
-        const parentElements = [await this.driver.wait(until.elementLocated(By.className("schedule-day_today")), 10000)];
+        const parentElements = [await this.driver.findElement(By.className("schedule-day_today"))];
         const data = await Promise.all(parentElements.map(async (element) => {
             const title = await element.findElement(By.className("schedule-day__title")).getText();
             return title;
@@ -78,15 +65,12 @@ class SchedulePage {
     }
 }
 
-describe('Schedule Page Test', function() {
+describe('Schedule Page Test', () => {
     let driver;
     let basePage;
     let schedulePage;
-
-    // Увеличение тайм-аута для всех тестов в этом наборе
-    this.timeout(20000);
-
-    before(async () => {
+    before(async function () {
+        this.timeout(10000);
         driver = await new Builder().forBrowser(Browser.CHROME).build();
         basePage = new BasePage(driver);
         schedulePage = new SchedulePage(driver);
@@ -96,7 +80,7 @@ describe('Schedule Page Test', function() {
         await driver.quit();
     });
 
-    afterEach(async function() {
+    afterEach(async function () {
         if (this.currentTest.state === 'failed') {
             const screenshot = await driver.takeScreenshot();
             const testCaseName = this.currentTest.title.replace(/\s+/g, '-').toLowerCase();
@@ -106,7 +90,8 @@ describe('Schedule Page Test', function() {
         }
     });
 
-    it('should search for a group schedule', async () => {
+    it('should search for a group schedule', async function () {
+        this.timeout(10000);
         await basePage.open();
         await basePage.clickSchedule();
         const header = await basePage.getTitle();
